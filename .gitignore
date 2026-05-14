@@ -1,0 +1,34 @@
+# --- Python basics ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+Lib/
+Scripts/
+pyvenv.cfg
+
+# --- Logs and temp files ---
+*.log
+*.lock
+*.tmp
+*.swp
+
+# --- IDE / Editor configs ---
+.vscode/
+.idea/
+
+# --- Jupyter notebooks checkpoints ---
+.ipynb_checkpoints/
+
+# --- Environment variables ---
+.env
+
+# --- Build / packaging ---
+build/
+dist/
+*.egg-info/
