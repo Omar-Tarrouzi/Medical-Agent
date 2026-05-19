@@ -1,40 +1,50 @@
 from langchain_core.messages import SystemMessage, AIMessage
-from langgraph.prebuilt import ToolNode
 from app.state import MedicalState
 from app.llm import llm
 from app.tools.patient_tools import ask_patient, recommend_interim_care
 
 DIAGNOSTIC_PROMPT = """
-Tu es un agent d’orientation clinique préliminaire.
-Ton rôle :
-1. Poser 5 questions successives au patient via le tool 'ask_patient'.
-2. Analyser les réponses pour produire une synthèse clinique.
-3. Générer une recommandation intermédiaire via 'recommend_interim_care'.
+Tu es un agent d'orientation clinique préliminaire.
+Ton rôle est de poser 5 questions au patient pour comprendre ses symptômes.
 
 IMPORTANT :
-- N’établis JAMAIS de diagnostic définitif.
-- Reste factuel et prudent dans ta synthèse.
-- Utilise le tool 'ask_patient' avec l’index correct (0 à 4).
-- Après 5 questions, produis la synthèse et la recommandation.
+- Pose EXACTEMENT UNE SEULE question à la fois.
+- N'appelle le tool 'ask_patient' qu'UNE SEULE FOIS par réponse.
+- Ne pose pas de questions au-delà de l'index 4.
 """
-
-# LLM avec les tools liés
-llm_with_tools = llm.bind_tools([ask_patient, recommend_interim_care])
 
 def diagnostic_agent_node(state: MedicalState) -> dict:
     """
     Agent de diagnostic : pose les questions et produit la synthèse clinique.
     """
-
     question_count = state.get("question_count", 0)
-    patient_qa = state.get("patient_qa", [])
+    patient_qa = list(state.get("patient_qa", []))
     messages = state.get("messages", [])
     initial_complaint = state.get("initial_complaint", "Non spécifié")
+    interim_care = state.get("interim_care", "")
 
-    # Construction du contexte
+    updates = {}
+
+    # 1. Traitement de TOUS les retours des tools récents (mise à jour de l'état)
+    # On parcourt les messages à l'envers pour trouver tous les ToolMessages ajoutés
+    new_qas = []
+    for msg in reversed(messages):
+        if getattr(msg, "type", "") == "tool":
+            if msg.name == "ask_patient" and msg.content not in patient_qa and msg.content not in new_qas:
+                new_qas.insert(0, msg.content)
+        else:
+            break  # On arrête dès qu'on tombe sur un AIMessage ou HumanMessage
+            
+    if new_qas:
+        patient_qa.extend(new_qas)
+        question_count += len(new_qas)
+        updates["patient_qa"] = patient_qa
+        updates["question_count"] = question_count
+
+    # Construction du contexte pour le LLM
     context_parts = [
         f"Plainte initiale du patient : {initial_complaint}",
-        f"Questions posées jusqu’à présent : {question_count}/5",
+        f"Questions posées jusqu'à présent : {question_count}/5",
     ]
     if patient_qa:
         context_parts.append("Réponses patient enregistrées :")
@@ -43,51 +53,46 @@ def diagnostic_agent_node(state: MedicalState) -> dict:
 
     context = "\n".join(context_parts)
 
-    # Invocation du LLM avec les tools
-    response = llm_with_tools.invoke([
-        SystemMessage(content=DIAGNOSTIC_PROMPT),
-        *messages,
-        SystemMessage(content=context)
-    ])
-
-    updates = {"messages": [response]}
-
-    # Traitement des appels d’outils
-    if hasattr(response, "tool_calls") and response.tool_calls:
-        for tool_call in response.tool_calls:
-            if tool_call["name"] == "ask_patient":
-                # La question sera posée via interrupt()
-                # question_count sera incrémenté par le tool executor
-                pass
-            elif tool_call["name"] == "recommend_interim_care":
-                # Le résultat sera capturé dans tool_messages
-                pass
-
-    # Mise à jour du compteur et synthèse
-    new_qa = state.get("patient_qa", [])
-
-    # Si on a toutes les réponses, produire la synthèse
-    if question_count >= 5 and not state.get("diagnostic_summary"):
-        qa_text = "\n".join(new_qa)
-        synthesis_prompt = f"""
-        Sur la base de ces informations patient :
-        Plainte initiale : {initial_complaint}
-        Questions/Réponses :
-        {qa_text}
-
-        Produis une synthèse clinique préliminaire structurée avec :
-        1. Symptômes principaux identifiés
-        2. Durée et intensité
-        3. Facteurs associés
-        4. Orientations possibles (sans diagnostic définitif)
-
-        Rappel : reste prudent et factuel.
-        """
-
-        synthesis_response = llm.invoke([
-            SystemMessage(content="Tu es un assistant d’orientation clinique."),
-            SystemMessage(content=synthesis_prompt)
+    # 2. Invocation du LLM ou génération directe de la synthèse
+    if question_count < 5:
+        # On continue de poser des questions
+        bound_llm = llm.bind_tools([ask_patient])
+        response = bound_llm.invoke([
+            SystemMessage(content=DIAGNOSTIC_PROMPT),
+            *messages,
+            SystemMessage(content=context)
         ])
-        updates["diagnostic_summary"] = synthesis_response.content
+        updates["messages"] = [response]
+    else:
+        # On a atteint 5 questions, on génère directement la synthèse sans relancer de questions
+        if not state.get("diagnostic_summary"):
+            qa_text = "\n".join(patient_qa)
+            synthesis_prompt = f"""
+            Sur la base de ces informations patient :
+            Plainte initiale : {initial_complaint}
+            Questions/Réponses :
+            {qa_text}
+
+            Produis une synthèse clinique préliminaire structurée avec :
+            1. Symptômes principaux identifiés
+            2. Durée et intensité
+            3. Facteurs associés
+            4. Orientations possibles (sans diagnostic définitif)
+
+            Rappel : reste prudent et factuel.
+            """
+
+            synthesis_response = llm.invoke([
+                SystemMessage(content="Tu es un assistant d'orientation clinique."),
+                SystemMessage(content=synthesis_prompt)
+            ])
+            updates["diagnostic_summary"] = synthesis_response.content
+            
+            # Et on génère programmatiquement la recommandation
+            interim = recommend_interim_care.invoke({"symptoms_summary": synthesis_response.content})
+            updates["interim_care"] = interim
+            
+            # Ajout d'un message fictif pour satisfaire le routeur
+            updates["messages"] = [AIMessage(content="Synthèse clinique et recommandations générées avec succès.")]
 
     return updates

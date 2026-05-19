@@ -1,8 +1,7 @@
 # LangGraph & LangChain
 langgraph>=0.2.0
 langchain>=0.3.0
-langchain-openai>=0.2.0
-langchain-anthropic>=0.2.0
+langchain-groq>=0.2.0
 langchain-community>=0.3.0
 
 # FastAPI
@@ -12,6 +11,7 @@ pydantic>=2.7.0
 
 # MCP
 mcp>=1.0.0
+langchain-mcp-adapters>=0.1.0
 
 # Utilitaires
 python-dotenv>=1.0.0

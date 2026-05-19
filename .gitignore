@@ -1,8 +1,15 @@
-# --- Python basics ---
+# ============================================================
+# ASCLEPIOS O.T — Root .gitignore
+# ============================================================
+
+# --- Python ---
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
+build/
+dist/
 
 # --- Virtual environments ---
 .venv/
@@ -12,23 +19,38 @@ Lib/
 Scripts/
 pyvenv.cfg
 
+# --- Environment variables (NEVER commit secrets) ---
+.env
+.env.*
+!.env.example
+
 # --- Logs and temp files ---
 *.log
-*.lock
 *.tmp
 *.swp
+*.bak
 
-# --- IDE / Editor configs ---
+# --- IDE / Editor ---
 .vscode/
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
-# --- Jupyter notebooks checkpoints ---
+# --- Jupyter ---
 .ipynb_checkpoints/
 
-# --- Environment variables ---
-.env
+# --- OS files ---
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# --- Build / packaging ---
-build/
+# --- Node.js (frontend) ---
+node_modules/
 dist/
-*.egg-info/
+dist-ssr/
+*.local
+
+# --- Lock files (optional, remove if you want to track them) ---
+# package-lock.json

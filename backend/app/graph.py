@@ -4,7 +4,7 @@ from langgraph.prebuilt import ToolNode
 
 from app.state import MedicalState
 from app.nodes.supervisor import supervisor_node
-from app.nodes.diagnostic_agent import diagnostic_agent_node, llm_with_tools
+from app.nodes.diagnostic_agent import diagnostic_agent_node
 from app.nodes.physician_review import physician_review_node
 from app.nodes.report_agent import report_agent_node
 from app.tools.patient_tools import ask_patient, recommend_interim_care
@@ -77,9 +77,20 @@ builder.add_edge("physician_review", "supervisor")
 builder.add_edge("report_agent", "supervisor")
 
 # --Compilation avec checkpointer (persistance en mémoire)---------------
-checkpointer = MemorySaver()
+import os
+import sys
 
-graph = builder.compile(
-    checkpointer=checkpointer,
-    interrupt_before=["physician_review"]  # Interruption avant la revue médecin
+# Detect if running under LangGraph API/Studio (dev or cloud)
+is_api_env = (
+    os.getenv("LANGGRAPH_API_URL") is not None
+    or os.getenv("LANGGRAPH_API_VERSION") is not None
+    or any(mod.startswith("langgraph_api") for mod in sys.modules)
 )
+
+if is_api_env:
+    # LangGraph API handles persistence automatically. Do not compile with a custom checkpointer.
+    graph = builder.compile()
+else:
+    # Local FastAPI runs require a checkpointer for manual state management.
+    checkpointer = MemorySaver()
+    graph = builder.compile(checkpointer=checkpointer)

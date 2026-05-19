@@ -4,13 +4,15 @@ from langgraph.types import interrupt
 # Les 5 questions médicales standardisées
 QUESTIONS = [
     "Depuis combien de temps avez-vous ces symptômes ? (heures, jours, semaines)",
-    "Sur une échelle de 1 à 10, comment évaluez-vous l’intensité de votre gêne ?",
+    "Sur une échelle de 1 à 10, comment évaluez-vous l'intensité de votre gêne ?",
     "Avez-vous de la fièvre ? Si oui, quelle température avez-vous relevée ?",
-    "Avez-vous d’autres symptômes associés ? (maux de tête, nausées, toux, etc.)",
+    "Avez-vous d'autres symptômes associés ? (maux de tête, nausées, toux, etc.)",
     "Prenez-vous actuellement des médicaments ? Avez-vous des allergies connues ?"
 ]
 
-def ask_patient_question(question_index: int) -> str:
+
+@tool
+def ask_patient(question_index: int) -> str:
     """
     Pose une question au patient et attend sa réponse via une interruption.
 
@@ -26,8 +28,8 @@ def ask_patient_question(question_index: int) -> str:
 
     question_text = QUESTIONS[question_index]
 
-    # interrupt() suspend l’exécution du graphe et retourne
-    # le contrôle à l’opérateur (patient). La valeur retournée
+    # interrupt() suspend l'exécution du graphe et retourne
+    # le contrôle à l'opérateur (patient). La valeur retournée
     # est la réponse fournie lors de la reprise.
     patient_answer = interrupt({
         "type": "patient_question",
@@ -37,6 +39,8 @@ def ask_patient_question(question_index: int) -> str:
     })
 
     return f"Q: {question_text} | R: {patient_answer}"
+
+
 @tool
 def recommend_interim_care(symptoms_summary: str) -> str:
     """
@@ -56,7 +60,7 @@ def recommend_interim_care(symptoms_summary: str) -> str:
     # Recommandations générales systématiques
     recommendations.append("Repos et bonne hydratation recommandés.")
 
-    # Détection de signaux d’alarme (red flags)
+    # Détection de signaux d'alarme (red flags)
     red_flags = [
         "difficul", "respir", "douleur thorac", "perte connaissance",
         "paralys", "convuls", "sang", "hemor"
@@ -70,14 +74,14 @@ def recommend_interim_care(symptoms_summary: str) -> str:
         )
     else:
         recommendations.append(
-            "Surveillance de l’évolution des symptômes recommandée."
+            "Surveillance de l'évolution des symptômes recommandée."
         )
         recommendations.append(
             "Consultez un médecin rapidement si aggravation ou persistance > 48h."
         )
 
     recommendations.append(
-        "RAPPEL : Cette recommandation ne remplace pas l’avis d’un professionnel de santé."
+        "RAPPEL : Cette recommandation ne remplace pas l'avis d'un professionnel de santé."
     )
 
     return " ".join(recommendations)

@@ -27,8 +27,8 @@ app = FastAPI(
 # CORS (pour le frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8501"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -116,8 +116,8 @@ async def resume_consultation(request: PatientAnswerRequest):
             Command(resume=request.answer),
             config
         )
-    except Exception:
-        pass
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Graph execution failed: {str(e)}")
 
     state = get_consultation_state(request.thread_id)
     interrupts = state.tasks[0].interrupts if state.tasks else []
