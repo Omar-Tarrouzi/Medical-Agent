@@ -98,9 +98,8 @@ function ScanOverlay({ label }: { label: string }) {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.15 }}
-            className={`scan-node ${
-              i < activeStage ? "done" : i === activeStage ? "active" : ""
-            }`}
+            className={`scan-node ${i < activeStage ? "done" : i === activeStage ? "active" : ""
+              }`}
           >
             <div className="scan-node-dot" />
             <span>{stage}</span>
@@ -143,36 +142,33 @@ function Timeline({ step }: { step: string }) {
           <div key={s.key} style={{ display: "flex", alignItems: "center" }}>
             <div className="timeline-node">
               <motion.div
-                className={`timeline-circle ${
-                  isActive
-                    ? "active-node"
-                    : isCompleted
+                className={`timeline-circle ${isActive
+                  ? "active-node"
+                  : isCompleted
                     ? "completed-node"
                     : ""
-                }`}
+                  }`}
                 layout
               />
               <span
-                className={`timeline-label ${
-                  isActive
-                    ? "active-label"
-                    : isCompleted
+                className={`timeline-label ${isActive
+                  ? "active-label"
+                  : isCompleted
                     ? "completed-label"
                     : ""
-                }`}
+                  }`}
               >
                 {s.label}
               </span>
             </div>
             {i < steps.length - 1 && (
               <div
-                className={`timeline-connector ${
-                  isCompleted
-                    ? "completed-connector"
-                    : isActive
+                className={`timeline-connector ${isCompleted
+                  ? "completed-connector"
+                  : isActive
                     ? "active-connector"
                     : ""
-                }`}
+                  }`}
               />
             )}
           </div>
@@ -470,10 +466,10 @@ export default function App() {
                       <h2>AI Interview Sequence</h2>
                     </div>
                     <img
-                      src="/images/video_1.gif"
+                      src="/images/video_1_transparent.gif"
                       alt="AI Sequence"
                       className="floating-gif"
-                      style={{ height: "40px", borderRadius: "4px" }}
+                      style={{ height: "90px", borderRadius: "35px" }}
                     />
                   </div>
 
@@ -568,10 +564,10 @@ export default function App() {
                     <h2>Physician Review Chamber</h2>
                   </div>
                   <img
-                    src="/images/video_2.gif"
+                    src="/images/video2_transparent.gif"
                     alt="Physician Review"
                     className="floating-gif"
-                    style={{ height: "40px", borderRadius: "4px" }}
+                    style={{ height: "60px", borderRadius: "4px" }}
                   />
                 </div>
 
