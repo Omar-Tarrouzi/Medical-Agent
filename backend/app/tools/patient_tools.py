@@ -70,7 +70,7 @@ def recommend_interim_care(symptoms_summary: str) -> str:
             "ALERTE : Symptômes nécessitant une consultation médicale urgente."
         )
         recommendations.append(
-            "Rendez-vous immédiatement aux urgences ou appelez le 15/18."
+            "Rendez-vous immédiatement aux urgences ou appelez les urgences."
         )
     else:
         recommendations.append(
